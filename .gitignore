@@ -1,0 +1,14 @@
+# Ignorar configuraciones sensibles
+.env
+bot_logs.log
+data/service_account.json
+
+# Ignorar entornos virtuales y dependencias innecesarias
+venv/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+
+# Ignorar archivos temporales
+temp/
