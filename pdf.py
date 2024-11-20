@@ -1,89 +1,69 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
-from dotenv import load_dotenv
-import os
+from discord import app_commands
 import logging
-from pathlib import Path
+import os
+from dotenv import load_dotenv
 
-# Configuración del registro de logs
-logging.basicConfig(
-    level=logging.INFO,  # Nivel de log: INFO, puedes cambiarlo a DEBUG para más detalles
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Formato del log
-    handlers=[
-        logging.FileHandler("bot_logs.log"),  # Guardar en archivo
-        logging.StreamHandler()  # Mostrar en consola
-    ]
-)
+# Cargar variables de entorno
+load_dotenv()
 
-# Cargar el archivo .env desde la ruta específica
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path)
+# Configuración de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Intents necesarios para el bot
+# Configurar intents del bot
 intents = discord.Intents.default()
-intents.message_content = True  # Permitir leer contenido de los mensajes
-intents.guilds = True  # Habilitar eventos relacionados con servidores
-
-# Configuración del bot
+intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 
-# Verificar que DISCORD_GUILD_ID esté cargado
+# Obtener el ID del servidor desde las variables de entorno
 GUILD_ID = os.getenv("DISCORD_GUILD_ID")
-logging.info(f"DISCORD_GUILD_ID: {GUILD_ID}")  # Log para depuración
-logging.info(f"DISCORD_TOKEN: {os.getenv('DISCORD_TOKEN')}")  # Log para depuración
-
-# Comando de prueba
-@bot.tree.command(name="saludo", description="Un comando de prueba que saluda")
-async def saludo(interaction: discord.Interaction):
-    logging.info("El comando /saludo fue ejecutado.")
-    await interaction.response.send_message("¡Hola, este es un comando de prueba!", ephemeral=True)
 
 @bot.event
 async def on_ready():
-    logging.info(f'{bot.user.name} ha iniciado sesión en Discord')
+    logging.info(f"{bot.user.name} ha iniciado sesión en Discord")
 
-    # Cargar extensiones (comandos)
-    try:
-        await bot.load_extension("comandos.registrodonadores")
-        logging.info("Comando 'registrodonadores' cargado correctamente.")
-    except commands.ExtensionAlreadyLoaded as e:
-        logging.warning(f"La extensión {e.name} ya estaba cargada.")  # Cambiado para manejar ExtensionAlreadyLoaded
-    except commands.ExtensionError as e:
-        logging.error(f"Error al cargar la extensión {e.name}: {str(e)}")
-    except Exception as e:
-        logging.error(f"Error inesperado al cargar comandos: {e}")
+    # Lista de extensiones a cargar
+    extensiones = [
+        "comandos.registrodonadores",
+        "comandos.subirpdf",
+        "comandos.dameellink"
+    ]
 
-    try:
-        await bot.load_extension("comandos.subirpdf")
-        logging.info("Comando 'subirpdf' cargado correctamente.")
-    except commands.ExtensionAlreadyLoaded as e:
-        logging.warning(f"La extensión {e.name} ya estaba cargada.")
-    except commands.ExtensionError as e:
-        logging.error(f"Error al cargar la extensión {e.name}: {str(e)}")
-    except Exception as e:
-        logging.error(f"Error inesperado al cargar comandos: {e}")
-    
-    try:
-        await bot.load_extension("comandos.dameellink")
-        logging.info("Comando 'dameellink' cargado correctamente.")
-    except commands.ExtensionAlreadyLoaded as e:
-        logging.warning(f"La extensión {e.name} ya estaba cargada.")
-    except commands.ExtensionError as e:
-        logging.error(f"Error al cargar la extensión {e.name}: {str(e)}")
-    except Exception as e:
-        logging.error(f"Error inesperado al cargar comandos: {e}")
+    # Cargar las extensiones
+    for extension in extensiones:
+        try:
+            await bot.load_extension(extension)
+            logging.info(f"Extensión '{extension}' cargada correctamente.")
+        except commands.ExtensionAlreadyLoaded:
+            logging.warning(f"La extensión '{extension}' ya estaba cargada.")
+        except commands.ExtensionError as e:
+            logging.error(f"Error al cargar la extensión '{extension}': {e}")
+        except Exception as e:
+            logging.error(f"Error inesperado al cargar '{extension}': {e}")
 
-    # Sincronización de comandos slash global
+    # Sincronizar comandos slash (por servidor específico o global)
     try:
-        synced = await bot.tree.sync()  # Sincronizar todos los comandos globalmente
-        logging.info(f"Comandos slash globales sincronizados correctamente: {len(synced)} comandos.")
+        if GUILD_ID:
+            guild = discord.Object(id=int(GUILD_ID))
+            synced = await bot.tree.sync(guild=guild)  # Sincronización específica por servidor
+            logging.info(f"Comandos slash sincronizados para el servidor {GUILD_ID}: {len(synced)} comandos.")
+        else:
+            synced = await bot.tree.sync()  # Sincronización global
+            logging.info(f"Comandos slash globales sincronizados: {len(synced)} comandos.")
+        
         for command in synced:
-            logging.info(f"Comando sincronizado: {command.name}")
+            logging.info(f"Comando registrado: {command.name}")
     except discord.errors.HTTPException as e:
         logging.error(f"Error HTTP al sincronizar comandos slash: {e.status} - {e.text}")
     except Exception as e:
         logging.error(f"Error al sincronizar comandos slash: {e}")
 
-# Ejecutar el bot con el token de Discord desde el archivo .env
+# Ejemplo de comando de prueba
+@bot.tree.command(name="saludo", description="Un comando de prueba que saluda")
+async def saludo(interaction: discord.Interaction):
+    logging.info("El comando /saludo fue ejecutado.")
+    await interaction.response.send_message("¡Hola! Este es un saludo de prueba.", ephemeral=True)
+
+# Ejecutar el bot con el token de Discord
 bot.run(os.getenv("DISCORD_TOKEN"))
