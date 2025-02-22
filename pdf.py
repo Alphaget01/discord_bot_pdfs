@@ -71,6 +71,7 @@ async def on_ready():
         "comandos.registrodonadores",
         "comandos.subirpdf",
         "comandos.dameellink",
+        "comandos.actualizarpdf",
     ]
     for extension in extensions:
         try:
