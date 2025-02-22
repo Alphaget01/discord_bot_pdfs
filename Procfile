@@ -1,2 +1,2 @@
 worker: python pdf.py
-web: npm start
+web: npm install && npm run build
