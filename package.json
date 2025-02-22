@@ -6,6 +6,6 @@
     "unzipper": "^0.12.3"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node utils_js/convertir_las_imágenes_a_pdf.js"
   }
 }
