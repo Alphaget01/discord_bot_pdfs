@@ -38,7 +38,7 @@ class ActualizarPDF(commands.Cog):
             # Procesar el documento encontrado
             serie_doc = next(query, None)
             if not serie_doc:
-                await interaction.response.send_message("La serie no fue encontrada en la base de datos.", ephemeral=True)
+                await interaction.response.send_message("La serie no fue encontrada en la base de datos sonso.", ephemeral=True)
                 return
             
             # Actualizar la URL en Firestore
